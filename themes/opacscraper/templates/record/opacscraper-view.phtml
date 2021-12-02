@@ -1,0 +1,12 @@
+<?php
+
+$libraryCodes = $this->holders()->getHoldingLibraries($this->driver);
+$codeString = implode(',', $libraryCodes);
+
+?>
+<div class="holdingsContainer">
+<form action="GET">
+<input type="hidden" class="hiddenId" value="<?=$this->driver->getUniqueId() ?>" />
+<input type="hidden" class="hiddenCodeString" value="<?=$codeString ?>" />
+</form>
+</div>

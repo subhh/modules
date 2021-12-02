@@ -1,0 +1,6 @@
+<?php
+$openUrlHelper = $this->openUrl($this->driver, 'record');
+foreach ($openUrlHelper->resolve() as $snippet):
+  echo $snippet;
+endforeach;
+?>

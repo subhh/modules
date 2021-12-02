@@ -1,0 +1,46 @@
+<?php
+
+if (empty($this->coreFieldCategories)):
+    $coreFieldList = [$this->solrDetails()->getCoreFields($this->driver, [])];
+else:
+    $coreFieldList = [];
+    foreach ($this->coreFieldCategories as $category):
+        $coreFieldList[] = $this->solrDetails()->getCoreFields($this->driver, [$category]);
+    endforeach;
+endif;
+
+foreach ($coreFieldList as $coreFields):
+    if (!empty($coreFields)):
+
+?>
+      <table class="table table-striped" summary="<?=$this->transEsc('Bibliographic Details')?>">
+<?php
+
+        foreach ($coreFields as $field => $items):
+            if (!empty($items[0])):
+                $template = $items['template'] ?: 'plaintext';
+                unset($items['template']);
+                if (strpos($template, '-link') !== false):
+                    list($linkType, $template) = explode('-', $template);
+                endif;
+                $snippet = $this->render('RecordDriver/DefaultRecord/solrmarc-' . $template . '.phtml', ['driver' => $this->driver, 'data' => $items, 'linkType' => $linkType ?? '']);
+                if (!empty($snippet)):
+
+?>
+          <tr><th><?=$this->transEsc($field)?>:</th><td>
+                <?=$snippet ?>
+          </td></tr>
+<?php
+
+                endif;
+            endif;
+        endforeach;
+
+?>
+      </table>
+<?php
+
+    endif;
+endforeach;
+
+?>
