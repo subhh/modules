@@ -41,13 +41,14 @@ while [ -z "$APP" ]; do
 done;
 
 TMPPATH=$(echo $ACTUALPATH | sed -s "s/^\(.\+\)\/\([^/]\+\)$/\\2/");
+TMPPATH=${APP}"-modules";
 echo -n "Pfad der Module (relativ zum Basispfad) ["$TMPPATH"]: ";
 read MOD;
 [ -z "$MOD" -o "$MOD" = "$APP" ] && MOD=$TMPPATH;
 
-echo -n "git-Branch der Module [modules-hh]: ";
+echo -n "git-Branch der Module [main]: ";
 read MODBRANCH;
-[ -z "$MODBRANCH" ] && MODBRANCH="modules-hh";
+[ -z "$MODBRANCH" ] && MODBRANCH="modules";
 
 ABSAPPDIR=${BASEPATH}/${APP};
 ABSMODDIR=${BASEPATH}/${MOD};
@@ -105,7 +106,7 @@ echo "VuFind wird installiert bzw. aktualisiert ...";
 if ! [ -d ".git" ]; then
     git clone https://github.com/vufind-org/vufind .;
     php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');";
-    php -r "if (hash_file('sha384', 'composer-setup.php') === '756890a4488ce9024fc62c56153228907f1545c228516cbf63f885e036d37e9a59d27d63f46af1d4d07ee0f76181c7d3') { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); } echo PHP_EOL;";
+    php -r "if (hash_file('sha384', 'composer-setup.php') === '906a84df04cea2aa72f40b5f787e49f22d4c2f19492ac310e8cba5b96ac8b64115ac402c8cd292b8a03482574915d1a8') { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); } echo PHP_EOL;";
     php composer-setup.php;
     php -r "unlink('composer-setup.php');";
     php composer.phar install;
@@ -120,7 +121,7 @@ chmod 777 local/cache;
 echo "Die Module werden installier bzw. aktualisiert ...";
 cd $ABSMODDIR;
 if ! [ -d ".git" ]; then
-    git clone https://github.com/beluga-core/core .;
+    git clone https://github.com/subhh/modules .;
     git checkout $MODBRANCH;
 else
     git pull;
@@ -240,7 +241,8 @@ touch theme.config.tmp;
 while IFS= read -r LINE; do
     if [ "$LINE" = "MIXINS" ]; then
         for MOD in $(ls ${ABSMODDIR}/module); do
-            printf '%s\n' "        '"$(echo $MOD | tr '[:upper:]' '[:lower:]')"'," >> theme.config.tmp;
+            THEME=$(echo $MOD | tr '[:upper:]' '[:lower:]');
+            [ -d "../${THEME}" ] && printf '%s\n' "        '"${THEME}"'," >> theme.config.tmp;
         done;
     else
         printf '%s\n' "$LINE" >> theme.config.tmp;
@@ -270,7 +272,7 @@ for MOD in $(ls module); do
     fi;
     if [ -d "module/${MOD}/composer" -a -f "module/${MOD}/composer/composer.list" ]; then
         while read LINE; do
-            composer require $LINE;
+            php composer.phar require $LINE;
         done < module/${MOD}/composer/composer.list;
     fi;
 done;
