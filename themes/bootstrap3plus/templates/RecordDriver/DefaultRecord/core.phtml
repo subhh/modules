@@ -46,6 +46,7 @@
     <?php endif; ?>
 
     <?php /* Display Main Details */ ?>
+
 <!-- Module RecordDriver -->
 <?php
 //coreFieldCategory according to category in solrmarc.yaml
@@ -53,9 +54,11 @@ $coreFieldCategories = ['id', 'title2', 'person', 'description', 'publication', 
 ?>
 <?=$this->render('RecordDriver/DefaultRecord/recorddriver-core-data.phtml', ['driver' => $driver, 'coreFieldCategories' => $coreFieldCategories]) ?>
 <!-- Module RecordDriver -->
+
 <!-- Module Libraries -->
 <?=$this->render('RecordDriver/DefaultRecord/libraries-core.phtml', ['searchClassId' => $this->searchClassId, 'driver' => $this->driver]) ?>
 <!-- Module Libraries -->
+
     <?php /* End Main Details */ ?>
   </div>
 </div>
