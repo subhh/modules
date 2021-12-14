@@ -187,4 +187,18 @@ class HBZ extends AbstractBase
             ],
         ];
     }
+
+    /**
+     * Allows for resolver driver specific enabling/disabling of the more options
+     * link which will link directly to the resolver URL. This should return false if
+     * the resolver returns data in XML or any other human unfriendly response.
+     *
+     * @return bool
+     */
+    public function supportsMoreOptionsLink()
+    {
+        // the EZB link resolver returns unstyled XML which is not helpful for the
+        // user
+        return false;
+    }
 }

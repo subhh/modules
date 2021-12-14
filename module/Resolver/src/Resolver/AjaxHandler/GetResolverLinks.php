@@ -108,68 +108,90 @@ class GetResolverLinks extends AbstractBase implements TranslatorAwareInterface
         $openUrl = $params->fromQuery('openurl', '');
         $resolverService = $params->fromQuery('resolverservice', ''); 
         $searchClassId = $params->fromQuery('searchClassId', '');
-        $resolverConfig = $this->resolverConfig[$resolverService] ?? [];
-        if (empty($resolverConfig['resolver'])) {
-            return $this->formatResponse(
-                $this->translate("Could not find $resolverService in configuration"),
-                self::STATUS_HTTP_ERROR
-            );
-        }
-        $resolverType = $resolverConfig['resolver'];
-        if (!$this->pluginManager->has($resolverType)) {
-            return $this->formatResponse(
-                $this->translate("Could not load driver for $resolverType"),
-                self::STATUS_HTTP_ERROR
-            );
-        }
-
-        $resolver = new Connection($this->pluginManager->get($resolverType));
-        if (false && isset($this->config->OpenURL->resolver_cache)) {
-            $resolver->enableCache($this->config->OpenURL->resolver_cache);
-        }
-        $resolver->setBaseUrl($resolverConfig['url']);
-        $resolver->setParameters($resolverConfig['params']);
-        $result = $resolver->fetchLinks($openUrl);
-        // Sort the returned links into categories based on service type:
-        $electronic = $print = $services = [];
-        foreach ($result as $link) {
-            switch ($link['service_type'] ?? '') {
-            case 'getHolding':
-                $print[] = $link;
-                break;
-            case 'getWebService':
-                $services[] = $link;
-                break;
-            case 'getDOI':
-                // Special case -- modify DOI text for special display:
-                $link['title'] = $this->translate('Get full text');
-                $link['coverage'] = '';
-            case 'getFullTxt':
-            default:
-                $electronic[] = $link;
-                break;
+//        $resolverConfig = $this->resolverConfig[$resolverService] ?? [];
+        //$resolverLinks = [];
+        $electronic = $print = $services = $moreOptionsLinks = [];
+        foreach ($this->resolverConfig as $resolverService => $resolverConfig) {
+            if (empty($resolverConfig['resolver'])) {
+                return $this->formatResponse(
+                    $this->translate("Could not find $resolverService in configuration"),
+                    self::STATUS_HTTP_ERROR
+                );
             }
+            $resolverType = $resolverConfig['resolver'];
+            if (!$this->pluginManager->has($resolverType)) {
+                return $this->formatResponse(
+                    $this->translate("Could not load driver for $resolverType"),
+                    self::STATUS_HTTP_ERROR
+                );
+            }
+
+            $resolver = new Connection($this->pluginManager->get($resolverType));
+            if (false && isset($this->config->OpenURL->resolver_cache)) {
+                 $resolver->enableCache($this->config->OpenURL->resolver_cache);
+            }
+            $resolver->setBaseUrl($resolverConfig['url']);
+            $resolver->setParameters($resolverConfig['params']);
+            $result = $resolver->fetchLinks($openUrl);
+            // Sort the returned links into categories based on service type:
+            //$electronic = $print = $services = [];
+            foreach ($result as $link) {
+                switch ($link['service_type'] ?? '') {
+                case 'getHolding':
+                    $print[] = $link;
+                    break;
+                case 'getWebService':
+                    $services[] = $link;
+                    break;
+                case 'getDOI':
+                    // Special case -- modify DOI text for special display:
+                    $link['title'] = $this->translate('Get full text');
+                    $link['coverage'] = '';
+                case 'getFullTxt':
+                default:
+                    $electronic[] = $link;
+                    break;
+                }
+            }
+
+            // Get the OpenURL base:
+            if (isset($resolverConfig['url'])) {
+                // Trim off any parameters (for legacy compatibility -- default config
+                // used to include extraneous parameters):
+                [$base] = explode('?', $resolverConfig['url']);
+            } else {
+                $base = false;
+            }
+
+            if ($resolver->supportsMoreOptionsLink()) {
+                $moreOptionsLinks[] = $resolver->getResolverUrl($openUrl);
+            }
+
+/*
+            $resolverLinks[] = [
+                'print' => $print,
+                'electronic' => $electronic,
+                'services' => $services,
+                'openUrlBase' => $base,
+                'moreOptionsLink' => $moreOptionsLink
+            ];
+*/
         }
+/*
+        $view = [
+            'resolverLinks' => $resolverLinks,
+            'openUrl' => $openUrl,
+            'searchClassId' => $searchClassId
+        ];
+*/
 
-        // Get the OpenURL base:
-        if (isset($resolverConfig['url'])) {
-            // Trim off any parameters (for legacy compatibility -- default config
-            // used to include extraneous parameters):
-            [$base] = explode('?', $resolverConfig['url']);
-        } else {
-            $base = false;
-        }
-
-        $moreOptionsLink = $resolver->supportsMoreOptionsLink()
-            ? $resolver->getResolverUrl($openUrl) : '';
-
-        // Render the links using the view:
         $view = [
             'openUrlBase' => $base, 'openUrl' => $openUrl, 'print' => $print,
             'electronic' => $electronic, 'services' => $services,
             'searchClassId' => $searchClassId,
-            'moreOptionsLink' => $moreOptionsLink
+            'moreOptionsLinks' => $moreOptionsLinks
         ];
+
         // output HTML encoded in JSON object
         $html = $this->renderer->render('ajax/resolverLinks.phtml', $view);
 
