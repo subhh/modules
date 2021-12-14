@@ -1,6 +1,10 @@
 <?php
-$openUrlHelper = $this->openUrl($this->driver, 'record');
-foreach ($openUrlHelper->resolve() as $snippet):
-  echo $snippet;
-endforeach;
+  echo $this->inlineScript(\Laminas\View\Helper\HeadScript::FILE, 'openurl.js', 'SET');
 ?>
+<span class="openUrlControls openUrlEmbed">
+  <a href="" class="fulltext" data-search-class-id="<?=$this->escapeHtmlAttr($this->searchClassId) ?>">
+    <span title="<?=$this->escapeHtmlAttr($this->driver->getOpenUrl())?>" class="openUrl"></span>
+    <span title="" class="resolverService"></span>
+  </a>
+</span>
+<div class="resolver hidden"><?=$this->transEsc('Loading')?>...</div>

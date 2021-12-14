@@ -35,7 +35,6 @@ VuFind.register('openurl', function OpenUrl() {
 
     // Locate the target area for displaying the results:
     var target = controls.next('div.resolver');
-
     // If the target is already visible, a previous click has populated it;
     // don't waste time doing redundant work.
     if (target.hasClass('hidden')) {
@@ -62,7 +61,7 @@ VuFind.register('openurl', function OpenUrl() {
     });
 
     if (typeof Hunt === 'undefined') {
-      container.find('.openUrlEmbed a').trigger('click');
+      container.find('.openUrlEmbed a').first().trigger('click');
       container.find('.openUrlEmbed.openUrlEmbedAutoLoad a').trigger('click');
     } else {
       new Hunt(
