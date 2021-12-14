@@ -147,6 +147,9 @@ class GetLibraries extends AbstractBase
 
         foreach ($this->Libraries->getLibraryFacetValues($backend) as $libraryCode => $libraryFacetValue) {
             $library = $this->Libraries->getLibrary($libraryCode);
+            if (!empty($library['show-library']) && $library['show-library'] == 'no') {
+                continue;
+            }
             $facetValues = explode(',', $libraryFacetValue);
             $count = 0;
             foreach ($facetValues as $facetValue) {
