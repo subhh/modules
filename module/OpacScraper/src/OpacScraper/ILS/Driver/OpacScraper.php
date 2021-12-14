@@ -105,7 +105,7 @@ class OpacScraper extends \VuFind\ILS\Driver\AbstractBase
             if (!empty($libraryConfig['code']) 
               && !empty($libraryConfig['opac-link'])
               && (in_array($libraryConfig['code'], $libraryCodes) || empty($libraryCodes))) {
-                $result = $this->doHTTPRequest($id, $libraryConfig['opac-link'], $libraryConfig['code']);
+                $result = $this->doHTTPRequest($id, $libraryConfig['opac-link'], $libraryConfig['code'], $libraryConfig['catalogtype'] ?? '');
                 $resultArray = json_decode($result, true);
 		if (!empty($resultArray)) {
                     $libraryData = ['LibraryCode' => $libraryConfig['code'], 'LibraryName' => $libraryConfig['fullname']];
@@ -244,7 +244,7 @@ class OpacScraper extends \VuFind\ILS\Driver\AbstractBase
      * @return xml or json object
      * @throws ILSException
      */
-    protected function doHTTPRequest($id, $url, $libraryCode)
+    protected function doHTTPRequest($id, $url, $libraryCode, $catalogType)
     {
 /*
         $result = [
@@ -270,6 +270,7 @@ class OpacScraper extends \VuFind\ILS\Driver\AbstractBase
             'id' => $id,
             'baseurl' => urlencode($url),
             'librarycode' => $libraryCode,
+            'catalogtype' => $catalogType,
         ];
         try {
             $result = $this->httpService->get(
