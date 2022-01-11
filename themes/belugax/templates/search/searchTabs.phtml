@@ -1,14 +1,17 @@
 <?php if (count($searchTabs) > 0): ?>
   <ul class="nav nav-tabs">
+    <?php $total = number_format($this->recordTotal, 0, ',', '.'); ?>
     <?php foreach ($searchTabs as $tab): ?>
         <?php if ($this->permission()->allowDisplay($tab['permission'])): ?>
-          <?php $total = number_format($this->recordTotal, 0, ',', '.'); ?>
-          <li<?=$tab['selected'] ? ' class="active"' : ''?>>
-            <a <?=$tab['selected'] ? '' : 'href="' . $this->escapeHtmlAttr($tab['url']) . '"' ?> data-source=<?=$tab['class']?>><?=$this->transEsc($tab['label']); ?><?=$tab['selected'] ? ' (' . $total . ')' : ''?></a>
+          <li<?=$tab['selected'] ? ' class="active"' : ''?><?=$showCounts ? ' data-show-counts' : ''?>>
+            <a <?=$tab['selected'] ? '' : 'href="' . $this->escapeHtmlAttr($tab['url']) . '"' ?> data-source="<?=$this->escapeHtmlAttr($tab['class'])?>"><?=$this->transEsc($tab['label']); ?><?=$tab['selected'] ? ' (' . $total . ')' : ''?> </a>
           </li>
         <?php elseif ($block = $this->permission()->getAlternateContent($tab['permission'])): ?>
             <?=$block?>
         <?php endif; ?>
     <?php endforeach; ?>
   </ul>
+  <?php if ($showCounts): ?>
+    <?php $this->headScript()->appendFile('resultcount.js'); ?>
+  <?php endif; ?>
 <?php endif; ?>
