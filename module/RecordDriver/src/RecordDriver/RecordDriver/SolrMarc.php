@@ -479,7 +479,7 @@ class SolrMarc extends SolrDefault
                     }
                 }
                 if (isset($originalLetters[$index])) {
-                    $originalLetters[$index][] .= $letters;
+                    $originalLetters[$index][] = $letters;
                 } else {
                     $originalLetters[$index] = [$letters];
                 }
