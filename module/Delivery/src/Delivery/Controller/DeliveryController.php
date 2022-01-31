@@ -119,7 +119,7 @@ class DeliveryController extends AbstractBase
         $listData = $deliveryTable->getDeliveryList($this->user->user_delivery_id);
         $templateParams = $this->deliveryAuthenticator->getTemplateParams($deliveryDomain);
 
-        $error = $this->updateDeliveryMail();
+        $error = $this->updateDeliveryMail($deliveryDomain);
 
         $view = $this->createViewModel();
         $view->is_admin = $isAdmin;
@@ -156,7 +156,7 @@ class DeliveryController extends AbstractBase
         if (empty($searchClassId)) {
             $errors[] = 'search class id is missing';
         } else {
-            if ($error = $this->updateDeliveryMail()) {
+            if ($error = $this->updateDeliveryMail($deliveryDomain)) {
                 $errors[] = $error;
             }
 
@@ -266,7 +266,7 @@ class DeliveryController extends AbstractBase
         return $view;
     }
 
-    private function updateDeliveryMail()
+    private function updateDeliveryMail($deliveryDomain)
     {
         $error = '';
         $deliveryEmail = $this->params()->fromPost('delivery_email');
@@ -276,7 +276,7 @@ class DeliveryController extends AbstractBase
                 if ($this->checkEmail($deliveryEmail)) {
                     $userDeliveryTable = $this->getTable('userdelivery');
                     $userDeliveryTable->update(['delivery_email' => $deliveryEmail], ['user_id' => $this->user->id]);
-                    $this->authenticate();
+                    $this->authenticate($deliveryDomain);
                 } else {
                     $error = 'wrong email format';
                 }
