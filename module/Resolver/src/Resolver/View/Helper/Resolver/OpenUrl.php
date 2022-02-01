@@ -67,29 +67,32 @@ class OpenUrl extends \VuFind\View\Helper\Root\OpenUrl
         $this->resolverConfig = $resolverConfig->toArray();
     }
 
+    public function getUrlFromMarc()
+    {
+        foreach($this->resolverConfig as $service => $params) {
+            if ($params['resolver'] == 'MARC') {
+                $marcDataKey = $params['marcData'];
+                if (!empty($marcDataKey)) {
+                    $marcData = $this->recordDriver->getMarcData($marcDataKey);
+                    if (!empty($marcData[0]['link'])) {
+                        $link = $marcData[0]['link']['data'][0];
+                        return $link;
+                    }
+                }
+            }
+        }
+        return '';
+    }
+
     public function getActiveServices()
     {
         $services = [];
         foreach($this->resolverConfig as $service => $params) {
-            if (!empty($params['url']) && $this->isActive($service)) {
+            if ($this->isActive($service)) {
                 $services[] = $service;
             }
         }
         return $services;
-    }
-
-    public function resolve()
-    {
-        $snippets = [];
-        foreach($this->resolverConfig as $service => $params) {
-            if (!empty($params['url']) && $this->isActive($service)) {
-                $snippets[] = $this->renderTemplateForService($service);
-            }
-        }
-        if (empty($snippets)) {
-            $snippets[] = parent::renderTemplate();
-        }
-        return $snippets;
     }
 
     /**
@@ -120,7 +123,6 @@ class OpenUrl extends \VuFind\View\Helper\Root\OpenUrl
     {
         // special case if no rules are defined at all assume that any record is
         // valid for openUrls
-//print_r($this->openUrlRules);
         if (!isset($this->openUrlRules) || count($this->openUrlRules) < 1) {
             return true;
         }
@@ -133,72 +135,5 @@ class OpenUrl extends \VuFind\View\Helper\Root\OpenUrl
             }
         }
         return false;
-    }
-
-    protected function renderTemplateForService($service)
-    {
-        $embed = (isset($this->config->embed) && !empty($this->config->embed));
-
-        $embedAutoLoad = $this->config->embed_auto_load ?? false;
-        // ini values 'true'/'false' are provided via ini reader as 1/0
-        // only check embedAutoLoad for area if the current area passed checkContext
-        if (!($embedAutoLoad === "1" || $embedAutoLoad === "0")
-            && !empty($this->area)
-        ) {
-            // embedAutoLoad is neither true nor false, so check if it contains an
-            // area string defining where exactly to use autoloading
-            $embedAutoLoad = in_array(
-                strtolower($this->area),
-                array_map(
-                    'trim',
-                    array_map(
-                        'strtolower',
-                        explode(',', $embedAutoLoad)
-                    )
-                )
-            );
-        }
-
-        $resolver = $this->resolverConfig[$service]['resolver'];
-        $baseUrl = $this->resolverConfig[$service]['url'];
-        $openurl = $this->recordDriver->getOpenUrl();
-        if ($this->resolverPluginManager->has($resolver)) {
-            $resolverObj = new \VuFind\Resolver\Connection(
-                $this->resolverPluginManager->get($resolver)
-            );
-            $resolverObj->setBaseUrl($baseUrl);
-            if (isset($this->resolverConfig[$service]['params'])) {
-                $resolverObj->setParameters($this->resolverConfig[$service]['params']);
-            }
-            $resolverUrl = $resolverObj->getResolverUrl($openurl);
-        } else {
-            $resolverUrl = empty($baseUrl) ? '' : $baseUrl . '?' . $openurl;
-        }
-
-        // Build parameters needed to display the control:
-        $params = [
-            'service' => $service,
-            'resolverUrl' => $resolverUrl,
-            'openUrl' => $openurl,
-            'openUrlBase' => empty($baseUrl) ? false : $baseUrl,
-            'openUrlWindow' => empty($this->config->window_settings)
-                ? false : $this->config->window_settings,
-            'openUrlGraphic' => empty($this->config->graphic)
-                ? false : $this->config->graphic,
-            'openUrlGraphicWidth' => empty($this->config->graphic_width)
-                ? false : $this->config->graphic_width,
-            'openUrlGraphicHeight' => empty($this->config->graphic_height)
-                ? false : $this->config->graphic_height,
-            'openUrlEmbed' => $embed,
-            'openUrlEmbedAutoLoad' => $embedAutoLoad
-        ];
-        if (!empty($imagebased)) {
-            $this->addImageBasedParams($imagebased, $params);
-        }
-
-        // Render the subtemplate:
-        return $this->context->__invoke($this->getView())->renderInContext(
-            'Helpers/openurl.phtml', $params
-        );
     }
 }

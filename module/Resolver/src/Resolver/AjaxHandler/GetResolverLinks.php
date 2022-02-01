@@ -106,12 +106,16 @@ class GetResolverLinks extends AbstractBase implements TranslatorAwareInterface
     {
         $this->disableSessionWrites();  // avoid session write timing bug
         $openUrl = $params->fromQuery('openurl', '');
-        $resolverService = $params->fromQuery('resolverservice', ''); 
-        $searchClassId = $params->fromQuery('searchClassId', '');
-//        $resolverConfig = $this->resolverConfig[$resolverService] ?? [];
-        //$resolverLinks = [];
+        $recordId = $params->fromQuery('recordid', '');
+        $resolverServiceList = $params->fromQuery('resolverservice', ''); 
+        $resolverServices = explode(',', $resolverServiceList); 
+        $searchClassId = $params->fromQuery('searchclassid', '');
+
         $electronic = $print = $services = $moreOptionsLinks = [];
         foreach ($this->resolverConfig as $resolverService => $resolverConfig) {
+            if (!in_array($resolverService, $resolverServices)) {
+                continue;
+            }
             if (empty($resolverConfig['resolver'])) {
                 return $this->formatResponse(
                     $this->translate("Could not find $resolverService in configuration"),
@@ -130,9 +134,21 @@ class GetResolverLinks extends AbstractBase implements TranslatorAwareInterface
             if (false && isset($this->config->OpenURL->resolver_cache)) {
                  $resolver->enableCache($this->config->OpenURL->resolver_cache);
             }
-            $resolver->setBaseUrl($resolverConfig['url']);
-            $resolver->setParameters($resolverConfig['params']);
+            if (!empty($resolverConfig['url'])) {
+                $resolver->setBaseUrl($resolverConfig['url']);
+                $resolver->setParameters($resolverConfig['params']);
+            } elseif ($recordId && $searchClassId) {
+                $parameters = [
+                    'recordId' => $recordId,
+                    'searchClassId' => $searchClassId,
+                    'solrMarcKey' => $resolverConfig['solrMarcKey']
+                ];
+                $resolver->setParameters($parameters);
+            } else {
+                continue;
+            }
             $result = $resolver->fetchLinks($openUrl);
+
             // Sort the returned links into categories based on service type:
             //$electronic = $print = $services = [];
             foreach ($result as $link) {
@@ -166,32 +182,13 @@ class GetResolverLinks extends AbstractBase implements TranslatorAwareInterface
             if ($resolver->supportsMoreOptionsLink()) {
                 $moreOptionsLinks[] = $resolver->getResolverUrl($openUrl);
             }
-
-/*
-            $resolverLinks[] = [
-                'print' => $print,
-                'electronic' => $electronic,
-                'services' => $services,
-                'openUrlBase' => $base,
-                'moreOptionsLink' => $moreOptionsLink
-            ];
-*/
         }
-/*
-        $view = [
-            'resolverLinks' => $resolverLinks,
-            'openUrl' => $openUrl,
-            'searchClassId' => $searchClassId
-        ];
-*/
-
         $view = [
             'openUrlBase' => $base, 'openUrl' => $openUrl, 'print' => $print,
             'electronic' => $electronic, 'services' => $services,
             'searchClassId' => $searchClassId,
             'moreOptionsLinks' => $moreOptionsLinks
         ];
-
         // output HTML encoded in JSON object
         $html = $this->renderer->render('ajax/resolverLinks.phtml', $view);
 
