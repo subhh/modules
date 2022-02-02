@@ -1,12 +1,13 @@
 /*global extractClassParams, Hunt, VuFind */
 VuFind.register('openurl', function OpenUrl() {
-  function _loadResolverLinks($target, openUrl, resolver, searchClassId) {
+  function _loadResolverLinks($target, openUrl, recordId, resolver, searchClassId) {
     $target.addClass('ajax_availability');
     var url = VuFind.path + '/AJAX/JSON?' + $.param({
       method: 'getResolverLinks',
       openurl: openUrl,
+      recordid: recordId,
       resolverservice: resolver,
-      searchClassId: searchClassId
+      searchclassid: searchClassId
     });
     $.ajax({
       dataType: 'json',
@@ -26,7 +27,7 @@ VuFind.register('openurl', function OpenUrl() {
     var element = $(el);
     // Extract the OpenURL associated with the clicked element:
     var openUrl = element.children('span.openUrl:first').attr('title');
-
+    var recordId = element.children('span.recordId:first').attr('title');
     var resolverService = element.children('span.resolverService:first').attr('title');
 
     // Hide the controls now that something has been clicked:
@@ -38,7 +39,7 @@ VuFind.register('openurl', function OpenUrl() {
     // If the target is already visible, a previous click has populated it;
     // don't waste time doing redundant work.
     if (target.hasClass('hidden')) {
-      _loadResolverLinks(target.removeClass('hidden'), openUrl, resolverService, element.data('searchClassId'));
+      _loadResolverLinks(target.removeClass('hidden'), openUrl, recordId, resolverService, element.data('searchClassId'));
     }
   }
 
