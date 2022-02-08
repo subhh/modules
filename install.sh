@@ -28,9 +28,7 @@ function reOrder() {
 
 # Zentrale Größen einlesen
 
-ACTUALPATH=$(pwd);
-
-TMPPATH=$(echo $ACTUALPATH | sed -s "s/^\(.\+\)\/\([^/]\+\)$/\\1/");
+TMPPATH=$(echo $(pwd) | sed -s "s/^\(.\+\)\/\([^/]\+\)$/\\1/");
 echo -n "Basispfad der Anwendung (oberhalb des Anwendungsverzeichnisses) ["$TMPPATH"]: ";
 read BASEPATH;
 [ -z "$BASEPATH" ] && BASEPATH=$TMPPATH;
@@ -40,15 +38,11 @@ while [ -z "$APP" ]; do
     read APP;
 done;
 
-TMPPATH=$(echo $ACTUALPATH | sed -s "s/^\(.\+\)\/\([^/]\+\)$/\\2/");
-TMPPATH=${APP}"-modules";
-echo -n "Pfad der Module (relativ zum Basispfad) ["$TMPPATH"]: ";
-read MOD;
-[ -z "$MOD" -o "$MOD" = "$APP" ] && MOD=$TMPPATH;
+MOD=${APP}-module;
 
 echo -n "git-Branch der Module [main]: ";
 read MODBRANCH;
-[ -z "$MODBRANCH" ] && MODBRANCH="modules";
+[ -z "$MODBRANCH" ] && MODBRANCH="main";
 
 ABSAPPDIR=${BASEPATH}/${APP};
 ABSMODDIR=${BASEPATH}/${MOD};
@@ -56,9 +50,6 @@ ABSMODDIR=${BASEPATH}/${MOD};
 [ -d "$ABSAPPDIR" ] || mkdir $ABSAPPDIR || echo "$RED Das Verzeichnis ${ABSAPPDIR} existiert nicht; breche ab ...$WHITE";
 [ -d "$ABSMODDIR" ] || mkdir $ABSMODDIR || echo "$RED Das Verzeichnis ${ABSMODDIR} existiert nicht; breche ab ...$WHITE";
 [ -d "$ABSAPPDIR" -a -d "$ABSMODDIR" ] || exit 1;
-
-# [ -f "${ABSAPPDIR}/logs/vufind.log" ] || echo -e "$RED Bitte stellen Sie sicher, dass die Datei ${ABSAPPDIR}/logs/vufind.log existiert und vom Webserver beschrieben werden kann; breche ab ...$WHITE";
-# [ -f "${ABSAPPDIR}/logs/vufind.log" ] || exit 1;
 
 echo -e "$GREEN application path:$WHITE ${ABSAPPDIR}";
 echo -e "$GREEN module path:$WHITE ${ABSMODDIR}";

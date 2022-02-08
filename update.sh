@@ -28,29 +28,31 @@ function reOrder() {
 
 # Zentrale Größen einlesen
 
-ACTUALPATH=$(pwd);
-
-TMPPATH=$(echo $ACTUALPATH | sed -s "s/^\(.\+\)\/\([^/]\+\)$/\\1/");
+TMPPATH=$(echo $(pwd) | sed -s "s/^\(.\+\)\/\([^/]\+\)$/\\1/");
 echo -n "Basispfad der Anwendung (oberhalb des Anwendungsverzeichnisses) ["$TMPPATH"]: ";
 read BASEPATH;
 [ -z "$BASEPATH" ] && BASEPATH=$TMPPATH;
 
+I=1;
+CAT="";
+echo "Installationen im Verzeichnis $BASEPATH:";
+for DIR in $(ls $BASEPATH); do
+    if [ "$DIR" = "${CAT}-module" ]; then
+        echo $I $CAT;
+        CATS[$I]=$CAT;
+        (( I++ ));
+    fi;
+    CAT=$DIR;
+done; 
+
+APP="";
 while [ -z "$APP" ]; do
-    echo -n "Pfad der Anwendung (relativ zum Basispfad): ";
-    read APP;
+    echo -n "Installation auswählen: ";
+    read J;
+    APP=${CATS[$J]}; 
 done;
 
-# $APP = $ACTUALPATH
-# $MOD = $APP-module
-
-TMPPATH=$(echo $ACTUALPATH | sed -s "s/^\(.\+\)\/\([^/]\+\)$/\\2/");
-echo -n "Pfad der Module (relativ zum Basispfad) ["$TMPPATH"]: ";
-read MOD;
-[ -z "$MOD" -o "$MOD" = "$APP" ] && MOD=$TMPPATH;
-
-echo -n "git-Branch der Module [modules-hh]: ";
-read MODBRANCH;
-[ -z "$MODBRANCH" ] && MODBRANCH="modules-hh";
+MOD=${APP}-module;
 
 ABSAPPDIR=${BASEPATH}/${APP};
 ABSMODDIR=${BASEPATH}/${MOD};
@@ -65,18 +67,75 @@ echo -e "$GREEN module path:$WHITE ${ABSMODDIR}";
 MODDIR=../../${MOD}/module;
 THEMEDIR=../../${MOD}/themes;
 
+# Datenbankparameter ermitteln
+DBSTRING=$(grep mysql ${ABSAPPDIR}/local/config/vufind/config.ini);
+DB=$(echo $DBSTRING | cut -d '/' -f 4);
+DBUSER=$(echo $DBSTRING | cut -d '/' -f 3 | cut -d ':' -f 1);
+DBPASS=$(echo $DBSTRING | cut -d '/' -f 3 | cut -d ':' -f 2 | cut -d '@' -f 1);
+DBHOST=$(echo $DBSTRING | cut -d '/' -f 3 | cut -d ':' -f 2 | cut -d '@' -f 2);
+
 # Quelltexte aus den Repositories holen und initialisieren
+echo -n "git-Branch der Module [main]: ";
+read MODBRANCH;
+[ -z "$MODBRANCH" ] && MODBRANCH="main";
 
 cd $ABSAPPDIR;
 echo "VuFind wird aktualisiert ...";
+git stash;
 git pull;
+git stash pop;
+php composer.phar update;
+
+cd $ABSMODDIR;
+I=0;
+for DIR in $(ls module); do
+    MODULES[$I]=$DIR;
+    (( I++ ));
+done;
 
 echo "Die Module werden aktualisiert ...";
-cd $ABSMODDIR;
-git pull;
+git clean -xdf;
+git reset --hard;
+git pull --rebase;
 git checkout $MODBRANCH;
 git checkout module;
 git checkout themes;
+
+echo -n "vorhandene Module: "
+for MODULE in ${MODULES[@]}; do
+    echo -ne "$GREEN ${MODULE} ";
+done;
+echo -e $WHITE;
+
+for DIR in $(ls module); do
+    THEME=$(echo $DIR | tr '[:upper:]' '[:lower:]');
+    SELECTED="n";
+    for MODULE in ${MODULES[@]}; do
+        if [ "$DIR" = "$MODULE" ]; then
+            SELECTED="y";
+            echo -n "Modul ${DIR} deinstallieren? (j/n) [n]: ";
+            read YN;
+            if [ "$YN" = "j" ]; then
+                echo -e "    Modul$RED ${DIR} abgewählt$WHITE";
+                rm -rf module/$DIR;
+                rm -rf themes/$THEME;
+            else
+                echo -e "    Modul$GREEN ${DIR} ausgewählt$WHITE";
+            fi;
+        fi;
+    done;
+    if [ "$SELECTED" = "n" ]; then
+        echo -n "Modul ${DIR} installieren? (j/n) [n]: ";
+        read YN;
+        if [ "$YN" = "j" ]; then
+            echo -e "    Modul$GREEN ${DIR} ausgewählt$WHITE";
+        else
+            echo -e "    Modul$RED ${DIR} abgewählt$WHITE";
+            rm -rf module/$DIR;
+            rm -rf themes/$THEME;
+        fi;
+    fi;
+done;
 
 # Abhängigkeiten der Module auflösen
 
@@ -116,19 +175,22 @@ for J in $(seq 0 $(( $N - 1 ))); do
 done; 
 
 # theme.config.php schreiben
-cd ${ABSMODDIR}/themes/${MAINTHEME};
-echo "theme.config.php schreiben ...";
-touch theme.config.tmp;
-while IFS= read -r LINE; do
-    if [ "$LINE" = "MIXINS" ]; then
-        for MOD in $(ls ${ABSMODDIR}/module); do
-            printf '%s\n' "        '"$(echo $MOD | tr '[:upper:]' '[:lower:]')"'," >> theme.config.tmp;
-        done;
-    else
-        printf '%s\n' "$LINE" >> theme.config.tmp;
-    fi;
-done < theme.config.php;
-mv theme.config.tmp theme.config.php;
+for BASETHEME in belugax bootstrap3plus; do
+    cd ${ABSMODDIR}/themes/${BASETHEME};
+    echo "${BASETHEME}/theme.config.php schreiben ...";
+    touch theme.config.tmp;
+    while IFS= read -r LINE; do
+        if [ "$LINE" = "MIXINS" ]; then
+            for MOD in $(ls ${ABSMODDIR}/module); do
+                THEME=$(echo $MOD | tr '[:upper:]' '[:lower:]');
+                [ -d "../${THEME}" ] && printf '%s\n' "        '"${THEME}"'," >> theme.config.tmp;
+            done;
+        else
+            printf '%s\n' "$LINE" >> theme.config.tmp;
+        fi;
+    done < theme.config.php;
+    mv theme.config.tmp theme.config.php;
+done;
 
 # Symlinks setzen - nur wo sie fehlen
 
@@ -148,12 +210,11 @@ done;
 cd $ABSAPPDIR;
 for MOD in $(ls module); do
     if [ -d "module/${MOD}/sql" -a -f "module/${MOD}/sql/mysql.sql" ]; then
-# aber nur bei einem neuen Modul - oder Tabelle nur, wenn noch nicht vorhanden
         mysql -u $DBUSER -p$DBPASS $DB < module/${MOD}/sql/mysql.sql;
     fi;
     if [ -d "module/${MOD}/composer" -a -f "module/${MOD}/composer/composer.list" ]; then
         while read LINE; do
-            composer require $LINE;
+            php composer.phar require $LINE;
         done < module/${MOD}/composer/composer.list;
     fi;
 done;
