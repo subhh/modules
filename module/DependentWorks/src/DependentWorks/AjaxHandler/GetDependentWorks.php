@@ -129,12 +129,14 @@ class GetDependentWorks extends AbstractBase implements TranslatorAwareInterface
                     $sort = $dependentWorksDate['sort']['data'][0];
                 }
             }
-            $prefix = (empty($date)) ? $part . '. ' : $part . ', ' . $date . '. ';
+            if (empty($part)) {
+                $prefix = (empty($date)) ? '' : $date . '. ';
+            } else {
+                $prefix = (empty($date)) ? $part . '. ' : $part . ', ' . $date . '. ';
+            }
             $data[$sort] = ['id' => $record->getUniqueID(),
                             'prefix' => $prefix,
-                            'title' => $title,
-                            'part' => $part,
-                            'date' => $date];
+                            'title' => $title];
         }
         krsort($data, $sortFlag);
         return $this->formatResponse(array_values($data));
