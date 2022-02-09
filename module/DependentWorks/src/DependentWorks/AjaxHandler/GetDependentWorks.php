@@ -88,12 +88,9 @@ class GetDependentWorks extends AbstractBase implements TranslatorAwareInterface
         $limit = $this->config['Global']['limit'] ?? 1;
         $sortFlag = $this->config['Global']['sort'] ?? SORT_REGULAR;
 
-        $switchToRegularSearch = empty($this->config['Global']['switch_to_regular_search']) ?
-            false : ($this->config['Global']['switch_to_regular_search'] == 'y');
-        $searchfield = empty($this->config['Global']['searchfield']) ?
-            'hierarchy_top_id' : $this->config['Global']['searchfield'];
-        $filter = empty($this->config['Global']['filter']) ?
-            '' : $this->config['Global']['filter'];
+        $switchToRegularSearch = (($this->config['Global']['switch_to_regular_search'] ?? '' ) == 'y');
+        $searchfield = $this->config['Global']['searchfield'] ?? 'hierarchy_top_id';
+        $filter = $this->config['Global']['filter'] ?? '';
 
         $ppn = $params->fromQuery('ppn');
         if (empty($ppn)) {
@@ -103,7 +100,7 @@ class GetDependentWorks extends AbstractBase implements TranslatorAwareInterface
         $results = $this->resultsManager->get($backend);
         $results->getOptions()->setLimitOptions([$limit, $limit]);
         $paramsObj = $results->getParams();
-        $paramsObj->initFromRequest(new Parameters(['lookfor' => $searchfield.':'.$ppn.' -id:'.$ppn, 'filter' => $filter]));
+        $paramsObj->initFromRequest(new Parameters(['lookfor' => $searchfield . ':' . $ppn . ' -id:' . $ppn, 'filter' => $filter]));
 
         $records = $results->getResults();
         $resultTotal = $results->getResultTotal();

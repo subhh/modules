@@ -31,8 +31,13 @@ jQuery(document).ready(function() {
                 if (data.data[0]['resultString'] !== undefined) {
                     var href = '<a href="' + ResultPath + '?lookfor=' + data.data[0]['searchfield'] + ':'
                             + recordId + ' -id:'  + recordId;
-                    if (data.data[0]['filter'].length > 0) {
-                        href += '&filter[]=' + data.data[0]['filter'];
+                    var filter = data.data[0]['filter'];
+                    if (jQuery.isArray(filter)) {
+                        for (var i = 0; i < filter.length; i++) {
+                            href += '&filter[]=' + filter[i];
+                        }
+                    } else if (filter.length > 0) {
+                        href += '&filter[]=' + filter;
                     }
                     href += '&sort=year">' + data.data[0]['resultString'] + '</a>';
                     jQuery('ul#DependentWorks').append('<li>' + href + '</li>');
