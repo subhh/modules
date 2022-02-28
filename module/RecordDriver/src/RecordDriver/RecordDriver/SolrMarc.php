@@ -28,7 +28,7 @@
 namespace RecordDriver\RecordDriver;
 
 use VuFind\XSLT\Processor as XSLTProcessor;
-use VuFind\Config\SearchSpecsReader;
+use VuFind\Config\YamlReader;
 use VuFind\RecordDriver\SolrDefault;
 
 /**
@@ -45,7 +45,14 @@ class SolrMarc extends SolrDefault
     use \VuFind\RecordDriver\Feature\IlsAwareTrait;
     use \VuFind\RecordDriver\Feature\MarcReaderTrait;
 
-    /**
+   /** 
+     * yaml Reader
+     *
+     ' @var YamlReader
+     */
+    protected $yamlReader = null;
+
+   /**
      * actual Configuration (yaml)
      *
      * @var string
@@ -84,8 +91,9 @@ class SolrMarc extends SolrDefault
      * @param string $marcYaml
      */
     public function __construct($mainConfig = null, $recordConfig = null,
-        $searchSettings = null, $solrMarcYaml = null
+        YamlReader $yamlReader, $searchSettings = null, $solrMarcYaml = null
     ) {
+        $this->yamlReader = $yamlReader;
         $this->addSolrMarcYaml($solrMarcYaml, false);
         parent::__construct($mainConfig, $recordConfig, $searchSettings);
     }
@@ -156,8 +164,7 @@ class SolrMarc extends SolrDefault
      */
     private function parseSolrMarcSpecs($solrMarcYaml)
     {
-        $specsReader = new SearchSpecsReader();
-        $rawSolrMarcSpecs = $specsReader->get($solrMarcYaml);
+        $rawSolrMarcSpecs = $this->yamlReader->get($solrMarcYaml);
         $solrMarcSpecs = $this->solrMarcSpecs;
         foreach ($rawSolrMarcSpecs as $item => $solrMarcSpec) {
             $solrMarcSpecs[$item] = [];
