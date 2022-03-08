@@ -29,7 +29,12 @@ namespace RelevancePicker\Search\Factory;
 
 use RelevancePicker\Backend\Solr\Response\Json\RecordCollectionFactory;
 use VuFindSearch\Backend\Solr\Connector;
-use *\Search\Factory\SolrDefaultBackendFactory as BackendFactory;Libraries VuFind
+
+if (class_exists('Libraries\Search\Factory\SolrDefaultBackendFactory')) {
+    class_alias('Libraries\Search\Factory\SolrDefaultBackendFactory', 'RelevancePicker\Search\Factory\BackendFactory');
+} elseif (class_exists('VuFind\Search\Factory\SolrDefaultBackendFactory')) {
+    class_alias('VuFind\Search\Factory\SolrDefaultBackendFactory', 'RelevancePicker\Search\Factory\BackendFactory');
+}
 
 class SolrDefaultBackendFactory extends BackendFactory
 {

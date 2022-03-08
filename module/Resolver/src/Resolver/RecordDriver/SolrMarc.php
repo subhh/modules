@@ -27,7 +27,11 @@
  */
 namespace Resolver\RecordDriver;
 
-use *\RecordDriver\SolrMarc as SolrMarcBase;RecordDriver VuFind
+if (class_exists('RecordDriver\RecordDriver\SolrMarc')) {
+    class_alias('RecordDriver\RecordDriver\SolrMarc', 'Resolver\RecordDriver\SolrMarcBase');
+} elseif (class_exists('VuFind\RecordDriver\SolrMarc')) {
+    class_alias('VuFind\RecordDriver\SolrMarc', 'Resolver\RecordDriver\SolrMarcBase');
+}
 
 /**
  * Model for MARC records in Solr.

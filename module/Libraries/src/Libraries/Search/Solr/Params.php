@@ -30,8 +30,15 @@ namespace Libraries\Search\Solr;
 use Libraries\Libraries;
 use VuFindSearch\ParamBag;
 use VuFind\Search\Solr\HierarchicalFacetHelper;
-use *\Search\Solr\Params as BaseParams;SearchKeys VuFind
-use *\Search\SearchKeysHelper;SearchKeys none
+
+if (class_exists('SearchKeys\Search\Solr\Params')) {
+    class_alias('SearchKeys\Search\Solr\Params', 'Libraries\Search\Solr\BaseParams');
+} elseif (class_exists('VuFind\Search\Solr\Params')) {
+    class_alias('VuFind\Search\Solr\Params', 'Libraries\Search\Solr\BaseParams');
+}
+if (class_exists('SearchKeys\Search\SearchKeysHelper')) {
+    class_alias('SearchKeys\Search\SearchKeysHelper',  'Libraries\Search\Solr\SearchKeysHelper');
+}
 
 class Params extends BaseParams
 {

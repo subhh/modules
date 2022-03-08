@@ -29,10 +29,17 @@ namespace RelevancePicker\Search\Solr;
 
 use VuFindSearch\ParamBag;
 use VuFind\Search\Solr\HierarchicalFacetHelper;
-use *\Search\Solr\Params as BaseParams;Libraries SearchKeys VuFind
-use *\Search\SearchKeysHelper;SearchKeys none
 
-//use VuFind\Search\Solr\Params as BaseParams;
+if (class_exists('Libraries\Search\Solr\Params')) {
+    class_alias('Libraries\Search\Solr\Params', 'RelevancePicker\Search\Solr\BaseParams');
+} elseif (class_exists('SearchKeys\Search\Solr\Params')) {
+    class_alias('SearchKeys\Search\Solr\Params', 'RelevancePicker\Search\Solr\BaseParams');
+} elseif (class_exists('VuFind\Search\Solr\Params')) {
+    class_alias('VuFind\Search\Solr\Params', 'RelevancePicker\Search\Solr\BaseParams');
+}
+if (class_exists('SearchKeys\Search\SearchKeysHelper')) {
+    class_alias('SearchKeys\Search\SearchKeysHelper',  'RelevancePicker\Search\Solr\SearchKeysHelper');
+}
 
 class Params extends BaseParams
 {

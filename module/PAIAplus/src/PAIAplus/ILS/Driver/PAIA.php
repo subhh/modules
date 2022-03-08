@@ -32,7 +32,12 @@
 namespace PAIAplus\ILS\Driver;
 
 use VuFind\Exception\ILS as ILSException;
-use *\ILS\Driver\PAIA as PAIAbase;DAIAplus VuFind
+
+if (class_exists('DAIAplus\ILS\Driver\PAIA')) {
+    class_alias('DAIAplus\ILS\Driver\PAIA', 'PAIAplus\ILS\Driver\PAIAbase');
+} elseif (class_exists('VuFind\ILS\Driver\PAIA')) {
+    class_alias('VuFind\ILS\Driver\PAIA', 'PAIAplus\ILS\Driver\PAIAbase');
+}
 
 /**
  * PAIA ILS Driver for VuFind to get patron information
